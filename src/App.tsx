@@ -438,6 +438,30 @@ function App() {
                 placeholder="Enter IFE factor"
               />
             </div>
+            <div className="flex-1">
+              <input
+                type="number"
+                value={factor.weight}
+                onChange={(e) => updateFactor('ife', factor.id, 'weight', parseFloat(e.target.value))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                placeholder="Weight"
+                min="0"
+              />
+            </div>
+            <div className="flex-1">
+              <input
+                type="number"
+                value={factor.rating}
+                onChange={(e) => updateFactor('ife', factor.id, 'rating', parseInt(e.target.value))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                placeholder="Rating"
+                min="1"
+                max="4"
+              />
+            </div>
+            <div className="flex-1">
+              <span>{(factor.weight * factor.rating).toFixed(2)}</span>
+            </div>
           </div>
         ))}
       </div>
@@ -458,6 +482,30 @@ function App() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
                 placeholder="Enter EFE factor"
               />
+            </div>
+            <div className="flex-1">
+              <input
+                type="number"
+                value={factor.weight}
+                onChange={(e) => updateFactor('efe', factor.id, 'weight', parseFloat(e.target.value))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                placeholder="Weight"
+                min="0"
+              />
+            </div>
+            <div className="flex-1">
+              <input
+                type="number"
+                value={factor.rating}
+                onChange={(e) => updateFactor('efe', factor.id, 'rating', parseInt(e.target.value))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                placeholder="Rating"
+                min="1"
+                max="4"
+              />
+            </div>
+            <div className="flex-1">
+              <span>{(factor.weight * factor.rating).toFixed(2)}</span>
             </div>
           </div>
         ))}
