@@ -7,9 +7,10 @@ export default defineConfig({
     rollupOptions: {
       external: ['@supabase/supabase-js'],
       output: {
-        globals: {
-          '@supabase/supabase-js': 'supabase'
-        }
+        format: 'es',
+        entryFileNames: '[name].js',
+        chunkFileNames: '[name]-[hash].js',
+        assetFileNames: '[name]-[hash][extname]'
       }
     }
   },
