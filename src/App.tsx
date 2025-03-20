@@ -5,6 +5,7 @@ import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Toolti
 import { Bar, Radar } from 'react-chartjs-2';
 import { supabase } from './lib/supabase';
 import { saveToFile, loadFromFile, autoSave, hasActiveFile } from './lib/fileSystem';
+import CompetitiveProfileMatrix from './components/CompetitiveProfileMatrix';
 
 // Register ChartJS components
 ChartJS.register(
@@ -57,7 +58,7 @@ interface StrategicData {
 }
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'ife' | 'efe' | 'swot' | 'ksf'>('swot');
+  const [activeTab, setActiveTab] = useState<'swot' | 'ife' | 'efe' | 'ksf' | 'cpm'>('swot');
   const [ifeFactors, setIfeFactors] = useState<Factor[]>([]);
   const [efeFactors, setEfeFactors] = useState<Factor[]>([]);
   const [strengths, setStrengths] = useState<SwotItem[]>([]);
@@ -65,6 +66,11 @@ function App() {
   const [opportunities, setOpportunities] = useState<SwotItem[]>([]);
   const [threats, setThreats] = useState<SwotItem[]>([]);
   const [ksfItems, setKsfItems] = useState<KsfItem[]>([]);
+  const [competitors, setCompetitors] = useState<Array<{ id: string; name: string; ratings: { [key: string]: number } }>>([
+    { id: '1', name: 'Our Company', ratings: {} },
+    { id: '2', name: 'Competitor 1', ratings: {} },
+    { id: '3', name: 'Competitor 2', ratings: {} },
+  ]);
 
   // Load data from Supabase on component mount
   useEffect(() => {
@@ -935,12 +941,27 @@ function App() {
                 <ListChecks className="h-4 w-4 mr-2" />
                 EFE Matrix
               </button>
+              <button
+                className={`px-4 py-2 rounded-t-lg ${activeTab === 'cpm' ? 'bg-white text-blue-600 border-t border-x' : 'bg-gray-100'}`}
+                onClick={() => setActiveTab('cpm')}
+              >
+                <ListChecks className="w-5 h-5 inline-block mr-2" />
+                CPM
+              </button>
             </nav>
           </div>
 
           {activeTab === 'swot' && renderSwotTab()}
           {activeTab === 'ksf' && renderKsfTab()}
           {(activeTab === 'ife' || activeTab === 'efe') && renderMatrixTab(activeTab)}
+          {activeTab === 'cpm' && (
+            <div className="p-6">
+              <CompetitiveProfileMatrix
+                competitors={competitors}
+                ksf={ksfItems}
+              />
+            </div>
+          )}
 
           <div className="p-6 border-t border-gray-200 bg-gray-50">
             <div className="flex justify-end space-x-4">
