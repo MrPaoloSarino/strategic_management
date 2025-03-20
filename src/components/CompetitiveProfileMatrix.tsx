@@ -190,10 +190,18 @@ const CompetitiveProfileMatrix: React.FC<CompetitiveProfileMatrixProps> = ({
         <table className="min-w-full table-auto border-collapse border border-gray-200">
           <thead>
             <tr className="bg-gray-100">
-              <th className="border p-2">Critical Success Factors</th>
-              <th className="border p-2">Weight</th>
+              <th rowSpan="2" className="border p-2">Critical Success Factors</th>
+              <th rowSpan="2" className="border p-2">Industry Weight</th>
               {competitors.map(comp => (
-                <th key={comp.id} className="border p-2">{comp.name}</th>
+                <th colSpan="2" key={comp.id} className="border p-2">{comp.name}</th>
+              ))}
+            </tr>
+            <tr className="bg-gray-100">
+              {competitors.map(comp => (
+                <React.Fragment key={comp.id}>
+                  <th className="border p-2">Rating (0-4)</th>
+                  <th className="border p-2">Score</th>
+                </React.Fragment>
               ))}
             </tr>
           </thead>
@@ -201,19 +209,23 @@ const CompetitiveProfileMatrix: React.FC<CompetitiveProfileMatrixProps> = ({
             {ksf.map(factor => (
               <tr key={factor.id}>
                 <td className="border p-2">{factor.name}</td>
-                <td className="border p-2">{factor.weight.toFixed(2)}</td>
+                <td className="border p-2">{factor.weight}</td>
                 {competitors.map(comp => (
-                  <td key={comp.id} className="border p-2">
-                    <input
-                      type="number"
-                      min="0"
-                      max="4"
-                      step="0.1"
-                      value={comp.ratings[factor.id] || 0}
-                      onChange={(e) => updateRating(comp.id, factor.id, parseFloat(e.target.value))}
-                      className="w-20 px-2 py-1 border rounded"
-                    />
-                  </td>
+                  <React.Fragment key={comp.id}>
+                    <td className="border p-2">
+                      <input
+                        type="number"
+                        value={comp.ratings[factor.id] || 0}
+                        onChange={(e) => updateRating(comp.id, factor.id, parseInt(e.target.value))}
+                        min="0"
+                        max="4"
+                        className="w-16 px-2 py-1 border rounded"
+                      />
+                    </td>
+                    <td className="border p-2">
+                      {(factor.weight * (comp.ratings[factor.id] || 0)).toFixed(1)}
+                    </td>
+                  </React.Fragment>
                 ))}
               </tr>
             ))}
