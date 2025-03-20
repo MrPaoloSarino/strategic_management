@@ -190,17 +190,17 @@ const CompetitiveProfileMatrix: React.FC<CompetitiveProfileMatrixProps> = ({
         <table className="min-w-full table-auto border-collapse border border-gray-200">
           <thead>
             <tr className="bg-gray-100">
-              <th rowSpan="2" className="border p-2">Critical Success Factors</th>
-              <th rowSpan="2" className="border p-2">Industry Weight</th>
+              <th rowSpan="2" className="border p-2 text-left">Key Success Factors</th>
+              <th rowSpan="2" className="border p-2 text-center w-24">Industry Weight</th>
               {competitors.map(comp => (
-                <th colSpan="2" key={comp.id} className="border p-2">{comp.name}</th>
+                <th colSpan="2" key={comp.id} className="border p-2 text-center bg-blue-50">{comp.name}</th>
               ))}
             </tr>
             <tr className="bg-gray-100">
               {competitors.map(comp => (
                 <React.Fragment key={comp.id}>
-                  <th className="border p-2">Rating (0-4)</th>
-                  <th className="border p-2">Score</th>
+                  <th className="border p-2 text-center w-24 bg-gray-50">Rating</th>
+                  <th className="border p-2 text-center w-24 bg-blue-50">Score</th>
                 </React.Fragment>
               ))}
             </tr>
@@ -209,33 +209,35 @@ const CompetitiveProfileMatrix: React.FC<CompetitiveProfileMatrixProps> = ({
             {ksf.map(factor => (
               <tr key={factor.id}>
                 <td className="border p-2">{factor.name}</td>
-                <td className="border p-2">{factor.weight}</td>
+                <td className="border p-2 text-center font-medium">{factor.weight.toFixed(2)}</td>
                 {competitors.map(comp => (
                   <React.Fragment key={comp.id}>
-                    <td className="border p-2">
+                    <td className="border p-2 text-center bg-gray-50">
                       <input
                         type="number"
                         value={comp.ratings[factor.id] || 0}
                         onChange={(e) => updateRating(comp.id, factor.id, parseInt(e.target.value))}
                         min="0"
                         max="4"
-                        className="w-16 px-2 py-1 border rounded"
+                        className="w-16 px-2 py-1 border rounded text-center"
                       />
                     </td>
-                    <td className="border p-2">
-                      {(factor.weight * (comp.ratings[factor.id] || 0)).toFixed(1)}
+                    <td className="border p-2 text-center bg-blue-50">
+                      {(factor.weight * (comp.ratings[factor.id] || 0)).toFixed(2)}
                     </td>
                   </React.Fragment>
                 ))}
               </tr>
             ))}
-            <tr className="bg-gray-100 font-bold">
-              <td className="border p-2">Total Score</td>
-              <td className="border p-2">1.00</td>
+            {/* Total Row */}
+            <tr className="bg-gray-100 font-semibold">
+              <td className="border p-2">Total</td>
+              <td className="border p-2 text-center">{ksf.reduce((sum, factor) => sum + factor.weight, 0).toFixed(2)}</td>
               {competitors.map(comp => (
-                <td key={comp.id} className="border p-2">
-                  {calculateScore(comp).toFixed(2)}
-                </td>
+                <React.Fragment key={comp.id}>
+                  <td className="border p-2 text-center bg-gray-50">-</td>
+                  <td className="border p-2 text-center bg-blue-50">{calculateScore(comp).toFixed(2)}</td>
+                </React.Fragment>
               ))}
             </tr>
           </tbody>
