@@ -1,14 +1,13 @@
 /** @jsxImportSource react */
 import React, { useState, useEffect, ChangeEvent } from 'react';
 import { FileSpreadsheet, Layout, PlusCircle, Save, Trash2, ListChecks, Target, Download, Upload } from 'lucide-react';
-import { ChartData, ChartOptions } from 'chart.js/auto';
-import { ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, BarElement, RadarController, RadialLinearScale } from 'chart.js';
+import { Chart, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, BarElement, RadarController, RadialLinearScale } from 'chart.js';
 import { Bar, Radar } from 'react-chartjs-2';
 import { supabase } from './lib/supabase';
 import { saveToFile, loadFromFile, autoSave, hasActiveFile } from './lib/fileSystem';
 
-// Register ChartJS components
-ChartJS.register(
+// Register Chart components
+Chart.register(
   CategoryScale,
   LinearScale,
   PointElement,
