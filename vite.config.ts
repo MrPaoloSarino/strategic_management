@@ -5,11 +5,11 @@ export default defineConfig({
   plugins: [react()],
   build: {
     rollupOptions: {
+      external: ['@supabase/supabase-js'],
       output: {
-        format: 'es',
-        entryFileNames: '[name].js',
-        chunkFileNames: '[name]-[hash].js',
-        assetFileNames: '[name]-[hash][extname]'
+        globals: {
+          '@supabase/supabase-js': 'supabase'
+        }
       }
     }
   },
