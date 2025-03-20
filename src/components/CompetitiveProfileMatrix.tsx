@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Radar } from 'react-chartjs-2';
+import { PlusCircle, Trash2, Save } from 'lucide-react';
 
 interface Competitor {
   id: string;
@@ -16,16 +17,63 @@ interface KSF {
 interface CompetitiveProfileMatrixProps {
   competitors: Competitor[];
   ksf: KSF[];
+  onUpdateCompetitors: (competitors: Competitor[]) => void;
 }
 
-const CompetitiveProfileMatrix: React.FC<CompetitiveProfileMatrixProps> = ({ competitors, ksf }) => {
+const CompetitiveProfileMatrix: React.FC<CompetitiveProfileMatrixProps> = ({ 
+  competitors, 
+  ksf,
+  onUpdateCompetitors 
+}) => {
   const [selectedCompetitors, setSelectedCompetitors] = useState<string[]>([]);
+  const [newCompetitorName, setNewCompetitorName] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const calculateScore = (competitor: Competitor) => {
     return Object.entries(competitor.ratings).reduce((total, [ksfId, rating]) => {
       const factor = ksf.find(k => k.id === ksfId);
       return total + (factor ? factor.weight * rating : 0);
     }, 0);
+  };
+
+  const addCompetitor = () => {
+    if (newCompetitorName.trim()) {
+      const newCompetitor: Competitor = {
+        id: Date.now().toString(),
+        name: newCompetitorName.trim(),
+        ratings: {}
+      };
+      onUpdateCompetitors([...competitors, newCompetitor]);
+      setNewCompetitorName('');
+    }
+  };
+
+  const updateCompetitorName = (id: string, newName: string) => {
+    const updatedCompetitors = competitors.map(comp =>
+      comp.id === id ? { ...comp, name: newName } : comp
+    );
+    onUpdateCompetitors(updatedCompetitors);
+    setEditingId(null);
+  };
+
+  const deleteCompetitor = (id: string) => {
+    onUpdateCompetitors(competitors.filter(comp => comp.id !== id));
+    setSelectedCompetitors(prev => prev.filter(compId => compId !== id));
+  };
+
+  const updateRating = (competitorId: string, ksfId: string, rating: number) => {
+    const updatedCompetitors = competitors.map(comp =>
+      comp.id === competitorId
+        ? {
+            ...comp,
+            ratings: {
+              ...comp.ratings,
+              [ksfId]: Math.max(0, Math.min(4, rating)) // Ensure rating is between 0 and 4
+            }
+          }
+        : comp
+    );
+    onUpdateCompetitors(updatedCompetitors);
   };
 
   const chartData = {
@@ -64,9 +112,56 @@ const CompetitiveProfileMatrix: React.FC<CompetitiveProfileMatrixProps> = ({ com
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-lg">
-      <h2 className="text-2xl font-bold mb-4">Competitive Profile Matrix</h2>
-      
-      {/* Competitor Selection */}
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold mb-2">Manage Competitors</h3>
+        <div className="flex items-center gap-2 mb-4">
+          <input
+            type="text"
+            value={newCompetitorName}
+            onChange={(e) => setNewCompetitorName(e.target.value)}
+            placeholder="Enter competitor name"
+            className="px-3 py-2 border rounded"
+          />
+          <button
+            onClick={addCompetitor}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          >
+            <PlusCircle className="w-5 h-5" />
+          </button>
+        </div>
+        
+        <div className="space-y-2">
+          {competitors.map(competitor => (
+            <div key={competitor.id} className="flex items-center gap-2">
+              {editingId === competitor.id ? (
+                <input
+                  type="text"
+                  value={competitor.name}
+                  onChange={(e) => updateCompetitorName(competitor.id, e.target.value)}
+                  onBlur={() => setEditingId(null)}
+                  autoFocus
+                  className="px-3 py-2 border rounded"
+                />
+              ) : (
+                <span
+                  onClick={() => setEditingId(competitor.id)}
+                  className="cursor-pointer hover:text-blue-500"
+                >
+                  {competitor.name}
+                </span>
+              )}
+              <button
+                onClick={() => deleteCompetitor(competitor.id)}
+                className="text-red-500 hover:text-red-600"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Competitor Selection for Chart */}
       <div className="mb-4">
         <h3 className="text-lg font-semibold mb-2">Select Competitors to Compare</h3>
         <div className="flex flex-wrap gap-2">
@@ -109,7 +204,15 @@ const CompetitiveProfileMatrix: React.FC<CompetitiveProfileMatrixProps> = ({ com
                 <td className="border p-2">{factor.weight.toFixed(2)}</td>
                 {competitors.map(comp => (
                   <td key={comp.id} className="border p-2">
-                    {comp.ratings[factor.id]?.toFixed(2) || '0.00'}
+                    <input
+                      type="number"
+                      min="0"
+                      max="4"
+                      step="0.1"
+                      value={comp.ratings[factor.id] || 0}
+                      onChange={(e) => updateRating(comp.id, factor.id, parseFloat(e.target.value))}
+                      className="w-20 px-2 py-1 border rounded"
+                    />
                   </td>
                 ))}
               </tr>

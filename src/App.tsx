@@ -43,6 +43,12 @@ interface KsfItem {
   performance: number;
 }
 
+interface Competitor {
+  id: string;
+  name: string;
+  ratings: { [key: string]: number };
+}
+
 interface StrategicData {
   swot: {
     strengths: SwotItem[];
@@ -55,6 +61,26 @@ interface StrategicData {
     efe: Factor[];
   };
   ksf: KsfItem[];
+  competitors: Competitor[];
+}
+
+declare namespace JSX {
+  interface IntrinsicElements {
+    div: React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>;
+    button: React.DetailedHTMLProps<React.ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement>;
+    input: React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>;
+    label: React.DetailedHTMLProps<React.LabelHTMLAttributes<HTMLLabelElement>, HTMLLabelElement>;
+    h2: React.DetailedHTMLProps<React.HTMLAttributes<HTMLHeadingElement>, HTMLHeadingElement>;
+    h3: React.DetailedHTMLProps<React.HTMLAttributes<HTMLHeadingElement>, HTMLHeadingElement>;
+    p: React.DetailedHTMLProps<React.HTMLAttributes<HTMLParagraphElement>, HTMLParagraphElement>;
+    span: React.DetailedHTMLProps<React.HTMLAttributes<HTMLSpanElement>, HTMLSpanElement>;
+    table: React.DetailedHTMLProps<React.TableHTMLAttributes<HTMLTableElement>, HTMLTableElement>;
+    thead: React.DetailedHTMLProps<React.HTMLAttributes<HTMLTableSectionElement>, HTMLTableSectionElement>;
+    tbody: React.DetailedHTMLProps<React.HTMLAttributes<HTMLTableSectionElement>, HTMLTableSectionElement>;
+    tr: React.DetailedHTMLProps<React.HTMLAttributes<HTMLTableRowElement>, HTMLTableRowElement>;
+    th: React.DetailedHTMLProps<React.ThHTMLAttributes<HTMLTableHeaderCellElement>, HTMLTableHeaderCellElement>;
+    td: React.DetailedHTMLProps<React.TdHTMLAttributes<HTMLTableDataCellElement>, HTMLTableDataCellElement>;
+  }
 }
 
 function App() {
@@ -66,7 +92,7 @@ function App() {
   const [opportunities, setOpportunities] = useState<SwotItem[]>([]);
   const [threats, setThreats] = useState<SwotItem[]>([]);
   const [ksfItems, setKsfItems] = useState<KsfItem[]>([]);
-  const [competitors, setCompetitors] = useState<Array<{ id: string; name: string; ratings: { [key: string]: number } }>>([
+  const [competitors, setCompetitors] = useState<Competitor[]>([
     { id: '1', name: 'Our Company', ratings: {} },
     { id: '2', name: 'Competitor 1', ratings: {} },
     { id: '3', name: 'Competitor 2', ratings: {} },
@@ -78,7 +104,7 @@ function App() {
       try {
         // Load SWOT data
         const { data: swotData } = await supabase
-          .from('swot_analysis')
+          .from('strategic_data')
           .select('*')
           .single();
         
@@ -87,27 +113,10 @@ function App() {
           setWeaknesses(swotData.weaknesses || []);
           setOpportunities(swotData.opportunities || []);
           setThreats(swotData.threats || []);
-        }
-
-        // Load Matrix data
-        const { data: matrixData } = await supabase
-          .from('matrix_analysis')
-          .select('*')
-          .single();
-        
-        if (matrixData) {
-          setIfeFactors(matrixData.ife_factors || []);
-          setEfeFactors(matrixData.efe_factors || []);
-        }
-
-        // Load KSF data
-        const { data: ksfData } = await supabase
-          .from('ksf_analysis')
-          .select('*')
-          .single();
-        
-        if (ksfData) {
-          setKsfItems(ksfData.ksf_items || []);
+          setIfeFactors(swotData.ife_factors || []);
+          setEfeFactors(swotData.efe_factors || []);
+          setKsfItems(swotData.ksf_items || []);
+          setCompetitors(swotData.competitors || []);
         }
       } catch (error) {
         console.error('Error loading data:', error);
@@ -151,27 +160,17 @@ function App() {
     try {
       // Save SWOT data
       await supabase
-        .from('swot_analysis')
+        .from('strategic_data')
         .upsert({
+          id: 1,
           strengths,
           weaknesses,
           opportunities,
           threats,
-        });
-
-      // Save Matrix data
-      await supabase
-        .from('matrix_analysis')
-        .upsert({
           ife_factors: ifeFactors,
           efe_factors: efeFactors,
-        });
-
-      // Save KSF data
-      await supabase
-        .from('ksf_analysis')
-        .upsert({
           ksf_items: ksfItems,
+          competitors,
         });
 
       alert('Data saved successfully!');
@@ -193,7 +192,8 @@ function App() {
         ife: ifeFactors,
         efe: efeFactors
       },
-      ksf: ksfItems
+      ksf: ksfItems,
+      competitors,
     };
 
     const result = await saveToFile(data);
@@ -212,6 +212,7 @@ function App() {
       setIfeFactors(result.data.matrices.ife);
       setEfeFactors(result.data.matrices.efe);
       setKsfItems(result.data.ksf);
+      setCompetitors(result.data.competitors);
       alert('Data loaded successfully!');
     }
   };
@@ -230,11 +231,12 @@ function App() {
           ife: ifeFactors,
           efe: efeFactors
         },
-        ksf: ksfItems
+        ksf: ksfItems,
+        competitors,
       };
       autoSave(data);
     }
-  }, [strengths, weaknesses, opportunities, threats, ifeFactors, efeFactors, ksfItems]);
+  }, [strengths, weaknesses, opportunities, threats, ifeFactors, efeFactors, ksfItems, competitors]);
 
   // Type-safe event handlers
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>, id: string, field: keyof KsfItem) => {
@@ -315,6 +317,11 @@ function App() {
     setKsfItems((prev: KsfItem[]) => prev.map(item =>
       item.id === id ? { ...item, [field]: value } : item
     ));
+  };
+
+  const handleUpdateCompetitors = (newCompetitors: Competitor[]) => {
+    setCompetitors(newCompetitors);
+    saveToSupabase();
   };
 
   const deleteFactor = (type: 'ife' | 'efe', id: string) => {
@@ -959,6 +966,7 @@ function App() {
               <CompetitiveProfileMatrix
                 competitors={competitors}
                 ksf={ksfItems}
+                onUpdateCompetitors={handleUpdateCompetitors}
               />
             </div>
           )}
