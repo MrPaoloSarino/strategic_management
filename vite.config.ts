@@ -5,7 +5,6 @@ export default defineConfig({
   plugins: [react()],
   build: {
     rollupOptions: {
-      external: ['@supabase/supabase-js'],
       output: {
         format: 'es',
         entryFileNames: '[name].js',
