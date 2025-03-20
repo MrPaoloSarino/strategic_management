@@ -195,77 +195,115 @@ const CompetitiveProfileMatrix: React.FC<CompetitiveProfileMatrixProps> = ({
         </div>
       </div>
 
-      {/* Matrix Table */}
-      <div className="overflow-x-auto mb-6">
-        <h3 className="text-lg font-semibold mb-2">Competitive Profile Matrix</h3>
-        <table className="min-w-full table-auto border-collapse border border-gray-200">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="border p-2 text-left" rowSpan={2}>Key Success Factors</th>
-              <th className="border p-2 text-center" rowSpan={2}>Industry Weight</th>
-              {competitors.map(comp => (
-                <th key={comp.id} className="border p-2 text-center bg-blue-50" colSpan={2}>
-                  {comp.name}
-                </th>
-              ))}
-            </tr>
-            <tr className="bg-gray-100">
-              {competitors.map(comp => (
-                <React.Fragment key={comp.id}>
-                  <th className="border p-2 text-center bg-gray-50">Rating</th>
-                  <th className="border p-2 text-center bg-blue-50">Score</th>
-                </React.Fragment>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {ksf.map(factor => (
-              <tr key={factor.id}>
-                <td className="border p-2">{factor.name}</td>
-                <td className="border p-2 text-center">{factor.weight.toFixed(2)}</td>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Matrix Table */}
+        <div className="overflow-x-auto">
+          <h3 className="text-lg font-semibold mb-2">Competitive Profile Matrix</h3>
+          <table className="w-full table-fixed border-collapse border border-gray-200">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="border p-2 text-left w-1/4" rowSpan={2}>Key Success Factors</th>
+                <th className="border p-2 text-center w-1/6" rowSpan={2}>Industry Weight</th>
+                {competitors.map(comp => (
+                  <th key={comp.id} className="border p-2 text-center bg-blue-50" colSpan={2}>
+                    {comp.name}
+                  </th>
+                ))}
+              </tr>
+              <tr className="bg-gray-100">
                 {competitors.map(comp => (
                   <React.Fragment key={comp.id}>
-                    <td className="border p-2 text-center bg-gray-50">
-                      <input
-                        type="number"
-                        value={comp.ratings[factor.id] || 0}
-                        onChange={(e) => updateRating(comp.id, factor.id, parseInt(e.target.value))}
-                        min="0"
-                        max="4"
-                        className="w-16 px-2 py-1 border rounded text-center"
-                      />
-                    </td>
-                    <td className="border p-2 text-center bg-blue-50 font-medium">
-                      {(factor.weight * (comp.ratings[factor.id] || 0)).toFixed(2)}
-                    </td>
+                    <th className="border p-2 text-center bg-gray-50 w-1/12">Rating</th>
+                    <th className="border p-2 text-center bg-blue-50 w-1/12">Score</th>
                   </React.Fragment>
                 ))}
               </tr>
-            ))}
-            {/* Total Row */}
-            <tr className="bg-gray-100 font-semibold">
-              <td className="border p-2">Total</td>
-              <td className="border p-2 text-center">{ksf.reduce((sum, factor) => sum + factor.weight, 0).toFixed(2)}</td>
-              {competitors.map(comp => (
-                <React.Fragment key={comp.id}>
-                  <td className="border p-2 text-center bg-gray-50">-</td>
-                  <td className="border p-2 text-center bg-blue-50">{calculateScore(comp).toFixed(2)}</td>
-                </React.Fragment>
+            </thead>
+            <tbody>
+              {ksf.map((factor, index) => (
+                <tr key={factor.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                  <td className="border p-2">{factor.name}</td>
+                  <td className="border p-2 text-center">{factor.weight.toFixed(2)}</td>
+                  {competitors.map(comp => (
+                    <React.Fragment key={comp.id}>
+                      <td className="border p-2 text-center">
+                        <input
+                          type="number"
+                          value={comp.ratings[factor.id] || 0}
+                          onChange={(e) => updateRating(comp.id, factor.id, parseInt(e.target.value))}
+                          min="0"
+                          max="4"
+                          className="w-16 px-2 py-1 border rounded text-center"
+                        />
+                      </td>
+                      <td className="border p-2 text-center font-medium">
+                        {(factor.weight * (comp.ratings[factor.id] || 0)).toFixed(2)}
+                      </td>
+                    </React.Fragment>
+                  ))}
+                </tr>
               ))}
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      {/* Radar Chart */}
-      {selectedCompetitors.length > 0 && (
-        <div className="w-full h-[400px] border p-4 rounded-lg bg-white">
-          <h3 className="text-lg font-semibold mb-2">Competitive Radar Chart</h3>
-          <div className="w-full h-[350px]">
-            <Radar data={chartData} options={chartOptions} />
-          </div>
+              {/* Total Row */}
+              <tr className="bg-blue-100 font-semibold">
+                <td className="border p-2">Total</td>
+                <td className="border p-2 text-center">{ksf.reduce((sum, factor) => sum + factor.weight, 0).toFixed(2)}</td>
+                {competitors.map(comp => (
+                  <React.Fragment key={comp.id}>
+                    <td className="border p-2 text-center">-</td>
+                    <td className="border p-2 text-center">{calculateScore(comp).toFixed(2)}</td>
+                  </React.Fragment>
+                ))}
+              </tr>
+            </tbody>
+          </table>
         </div>
-      )}
+
+        {/* Radar Chart */}
+        <div className="border p-4 rounded-lg bg-white">
+          <h3 className="text-lg font-semibold mb-2">Competitive Radar Chart</h3>
+          {selectedCompetitors.length > 0 ? (
+            <div className="w-full h-[350px]">
+              <Radar data={chartData} options={chartOptions} />
+            </div>
+          ) : (
+            <div className="w-full h-[350px] flex items-center justify-center bg-gray-50 rounded">
+              <p className="text-gray-500">Select competitors to display the radar chart</p>
+            </div>
+          )}
+          
+          {/* Tabular Radar Data */}
+          {selectedCompetitors.length > 0 && (
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full table-fixed border-collapse border border-gray-200">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="border p-2 text-left">Key Success Factor</th>
+                    {competitors
+                      .filter(comp => selectedCompetitors.includes(comp.id))
+                      .map(comp => (
+                        <th key={comp.id} className="border p-2 text-center">{comp.name}</th>
+                      ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {ksf.map((factor, index) => (
+                    <tr key={factor.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                      <td className="border p-2">{factor.name}</td>
+                      {competitors
+                        .filter(comp => selectedCompetitors.includes(comp.id))
+                        .map(comp => (
+                          <td key={comp.id} className="border p-2 text-center">
+                            {comp.ratings[factor.id] || 0}
+                          </td>
+                        ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
