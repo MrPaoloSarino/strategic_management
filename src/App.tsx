@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { BarChart3, FileSpreadsheet, Layout, PlusCircle, Save, Trash2, ListChecks, Target } from 'lucide-react';
+import React, { useState, useEffect, ChangeEvent } from 'react';
+import { FileSpreadsheet, Layout, PlusCircle, Save, Trash2, ListChecks, Target, Download, Upload } from 'lucide-react';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, RadialLinearScale, PointElement, LineElement, Filler } from 'chart.js';
 import { Bar, Radar } from 'react-chartjs-2';
-import { supabase, SwotData, MatrixData, KsfData } from './lib/supabase';
+import { supabase } from './lib/supabase';
+import { saveToFile, loadFromFile, autoSave, hasActiveFile } from './lib/fileSystem';
 
+// Register ChartJS components
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -17,57 +19,51 @@ ChartJS.register(
   Legend
 );
 
-type Factor = {
+// Define interfaces for data types
+interface Factor {
   id: string;
   description: string;
   weight: number;
   rating: number;
-};
+}
 
-type SwotItem = {
+interface SwotItem {
   id: string;
   description: string;
-};
+}
 
-type KsfItem = {
+interface KsfItem {
   id: string;
   description: string;
   target: string;
   measure: string;
   weight: number;
   performance: number;
-};
+}
+
+interface StrategicData {
+  swot: {
+    strengths: SwotItem[];
+    weaknesses: SwotItem[];
+    opportunities: SwotItem[];
+    threats: SwotItem[];
+  };
+  matrices: {
+    ife: Factor[];
+    efe: Factor[];
+  };
+  ksf: KsfItem[];
+}
 
 function App() {
   const [activeTab, setActiveTab] = useState<'ife' | 'efe' | 'swot' | 'ksf'>('swot');
-  const [ifeFactors, setIfeFactors] = useState<Factor[]>(() => {
-    const saved = localStorage.getItem('ifeFactors');
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [efeFactors, setEfeFactors] = useState<Factor[]>(() => {
-    const saved = localStorage.getItem('efeFactors');
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [strengths, setStrengths] = useState<SwotItem[]>(() => {
-    const saved = localStorage.getItem('strengths');
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [weaknesses, setWeaknesses] = useState<SwotItem[]>(() => {
-    const saved = localStorage.getItem('weaknesses');
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [opportunities, setOpportunities] = useState<SwotItem[]>(() => {
-    const saved = localStorage.getItem('opportunities');
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [threats, setThreats] = useState<SwotItem[]>(() => {
-    const saved = localStorage.getItem('threats');
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [ksfItems, setKsfItems] = useState<KsfItem[]>(() => {
-    const saved = localStorage.getItem('ksfItems');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [ifeFactors, setIfeFactors] = useState<Factor[]>([]);
+  const [efeFactors, setEfeFactors] = useState<Factor[]>([]);
+  const [strengths, setStrengths] = useState<SwotItem[]>([]);
+  const [weaknesses, setWeaknesses] = useState<SwotItem[]>([]);
+  const [opportunities, setOpportunities] = useState<SwotItem[]>([]);
+  const [threats, setThreats] = useState<SwotItem[]>([]);
+  const [ksfItems, setKsfItems] = useState<KsfItem[]>([]);
 
   // Load data from Supabase on component mount
   useEffect(() => {
@@ -178,6 +174,67 @@ function App() {
     }
   };
 
+  const handleSave = async () => {
+    const data: StrategicData = {
+      swot: {
+        strengths,
+        weaknesses,
+        opportunities,
+        threats
+      },
+      matrices: {
+        ife: ifeFactors,
+        efe: efeFactors
+      },
+      ksf: ksfItems
+    };
+
+    const result = await saveToFile(data);
+    if (result.success) {
+      alert('Data saved successfully!');
+    }
+  };
+
+  const handleLoad = async () => {
+    const result = await loadFromFile();
+    if (result.data) {
+      setStrengths(result.data.swot.strengths);
+      setWeaknesses(result.data.swot.weaknesses);
+      setOpportunities(result.data.swot.opportunities);
+      setThreats(result.data.swot.threats);
+      setIfeFactors(result.data.matrices.ife);
+      setEfeFactors(result.data.matrices.efe);
+      setKsfItems(result.data.ksf);
+      alert('Data loaded successfully!');
+    }
+  };
+
+  // Auto-save whenever data changes
+  useEffect(() => {
+    if (hasActiveFile()) {
+      const data: StrategicData = {
+        swot: {
+          strengths,
+          weaknesses,
+          opportunities,
+          threats
+        },
+        matrices: {
+          ife: ifeFactors,
+          efe: efeFactors
+        },
+        ksf: ksfItems
+      };
+      autoSave(data);
+    }
+  }, [strengths, weaknesses, opportunities, threats, ifeFactors, efeFactors, ksfItems]);
+
+  // Type-safe event handlers
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement>, id: string, field: keyof KsfItem) => {
+    const value = e.target.type === 'number' ? parseFloat(e.target.value) : e.target.value;
+    updateKsfItem(id, field, value);
+  };
+
   const addFactor = (type: 'ife' | 'efe') => {
     const newFactor: Factor = {
       id: Math.random().toString(36).substr(2, 9),
@@ -193,7 +250,7 @@ function App() {
     }
   };
 
-  const addSwotItem = (type: 'strengths' | 'weaknesses' | 'opportunities' | 'threats') => {
+  const addSwotItem = (type: keyof StrategicData['swot']) => {
     const newItem: SwotItem = {
       id: Math.random().toString(36).substr(2, 9),
       description: ''
@@ -228,21 +285,13 @@ function App() {
   };
 
   const updateFactor = (type: 'ife' | 'efe', id: string, field: keyof Factor, value: string | number) => {
-    const factors = type === 'ife' ? ifeFactors : efeFactors;
     const setFactors = type === 'ife' ? setIfeFactors : setEfeFactors;
-    
-    setFactors(
-      factors.map(factor => 
-        factor.id === id ? { ...factor, [field]: value } : factor
-      )
-    );
+    setFactors((prev: Factor[]) => prev.map(factor => 
+      factor.id === id ? { ...factor, [field]: value } : factor
+    ));
   };
 
-  const updateSwotItem = (
-    type: 'strengths' | 'weaknesses' | 'opportunities' | 'threats',
-    id: string,
-    description: string
-  ) => {
+  const updateSwotItem = (type: keyof StrategicData['swot'], id: string, value: string) => {
     const setItems = {
       strengths: setStrengths,
       weaknesses: setWeaknesses,
@@ -250,20 +299,13 @@ function App() {
       threats: setThreats
     }[type];
 
-    const items = {
-      strengths,
-      weaknesses,
-      opportunities,
-      threats
-    }[type];
-
-    setItems(items.map(item => 
-      item.id === id ? { ...item, description } : item
+    setItems((prev: SwotItem[]) => prev.map(item =>
+      item.id === id ? { ...item, description: value } : item
     ));
   };
 
   const updateKsfItem = (id: string, field: keyof KsfItem, value: string | number) => {
-    setKsfItems(ksfItems.map(item =>
+    setKsfItems((prev: KsfItem[]) => prev.map(item =>
       item.id === id ? { ...item, [field]: value } : item
     ));
   };
@@ -273,10 +315,7 @@ function App() {
     setFactors(prev => prev.filter(factor => factor.id !== id));
   };
 
-  const deleteSwotItem = (
-    type: 'strengths' | 'weaknesses' | 'opportunities' | 'threats',
-    id: string
-  ) => {
+  const deleteSwotItem = (type: keyof StrategicData['swot'], id: string) => {
     const setItems = {
       strengths: setStrengths,
       weaknesses: setWeaknesses,
@@ -291,12 +330,12 @@ function App() {
     setKsfItems(prev => prev.filter(item => item.id !== id));
   };
 
-  const calculateTotal = (factors: Factor[]) => {
-    return factors.reduce((sum, factor) => sum + (factor.weight * factor.rating), 0);
+  const calculateTotal = (factors: Factor[]): number => {
+    return factors.reduce((sum: number, factor: Factor) => sum + (factor.weight * factor.rating), 0);
   };
 
-  const calculateKsfScore = (ksfItems: KsfItem[]) => {
-    return ksfItems.reduce((total, item) => {
+  const calculateKsfScore = (items: KsfItem[]): number => {
+    return items.reduce((total: number, item: KsfItem) => {
       const score = (item.weight / 100) * (item.performance / 100) * 100;
       return total + score;
     }, 0);
@@ -304,11 +343,11 @@ function App() {
 
   const getMatrixRadarData = (factors: Factor[]) => {
     return {
-      labels: factors.map(f => f.description || 'Unnamed Factor'),
+      labels: factors.map((f: Factor) => f.description || 'Unnamed Factor'),
       datasets: [
         {
           label: 'Weighted Score',
-          data: factors.map(f => f.weight * f.rating),
+          data: factors.map((f: Factor) => f.weight * f.rating),
           backgroundColor: 'rgba(54, 162, 235, 0.2)',
           borderColor: 'rgba(54, 162, 235, 1)',
           borderWidth: 2,
@@ -316,7 +355,7 @@ function App() {
         },
         {
           label: 'Weight',
-          data: factors.map(f => f.weight),
+          data: factors.map((f: Factor) => f.weight),
           backgroundColor: 'rgba(255, 99, 132, 0.2)',
           borderColor: 'rgba(255, 99, 132, 1)',
           borderWidth: 2,
@@ -324,7 +363,7 @@ function App() {
         },
         {
           label: 'Rating',
-          data: factors.map(f => f.rating),
+          data: factors.map((f: Factor) => f.rating),
           backgroundColor: 'rgba(75, 192, 192, 0.2)',
           borderColor: 'rgba(75, 192, 192, 1)',
           borderWidth: 2,
@@ -354,20 +393,20 @@ function App() {
     };
   };
 
-  const getKsfRadarData = (ksfItems: KsfItem[]) => {
+  const getKsfRadarData = (items: KsfItem[]) => {
     return {
-      labels: ksfItems.map(item => item.description || 'Unnamed KSF'),
+      labels: items.map((item: KsfItem) => item.description || 'Unnamed KSF'),
       datasets: [
         {
           label: 'Target Achievement',
-          data: ksfItems.map(item => (item.performance / 100) * 100),
+          data: items.map((item: KsfItem) => (item.performance / 100) * 100),
           backgroundColor: 'rgba(54, 162, 235, 0.2)',
           borderColor: 'rgba(54, 162, 235, 1)',
           borderWidth: 2,
         },
         {
           label: 'Weighted Score',
-          data: ksfItems.map(item => (item.weight / 100) * (item.performance / 100) * 100),
+          data: items.map((item: KsfItem) => (item.weight / 100) * (item.performance / 100) * 100),
           backgroundColor: 'rgba(255, 99, 132, 0.2)',
           borderColor: 'rgba(255, 99, 132, 1)',
           borderWidth: 2,
@@ -412,13 +451,13 @@ function App() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {(type === 'ife' ? ifeFactors : efeFactors).map((factor) => (
+              {(type === 'ife' ? ifeFactors : efeFactors).map((factor: Factor) => (
                 <tr key={factor.id}>
                   <td className="px-6 py-4">
                     <input
                       type="text"
                       value={factor.description}
-                      onChange={(e) => updateFactor(type, factor.id, 'description', e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateFactor(type, factor.id, 'description', e.target.value)}
                       className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       placeholder="Enter factor description"
                     />
@@ -427,7 +466,7 @@ function App() {
                     <input
                       type="number"
                       value={factor.weight}
-                      onChange={(e) => updateFactor(type, factor.id, 'weight', parseFloat(e.target.value))}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateFactor(type, factor.id, 'weight', parseFloat(e.target.value))}
                       min="0"
                       max="1"
                       step="0.01"
@@ -437,7 +476,7 @@ function App() {
                   <td className="px-6 py-4">
                     <select
                       value={factor.rating}
-                      onChange={(e) => updateFactor(type, factor.id, 'rating', parseInt(e.target.value))}
+                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateFactor(type, factor.id, 'rating', parseInt(e.target.value))}
                       className="block w-24 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     >
                       <option value={1}>1 - Poor</option>
@@ -465,7 +504,7 @@ function App() {
                 <td className="px-6 py-4 font-medium">Total</td>
                 <td className="px-6 py-4">
                   {(type === 'ife' ? ifeFactors : efeFactors)
-                    .reduce((sum, factor) => sum + factor.weight, 0)
+                    .reduce((sum: number, factor: Factor) => sum + factor.weight, 0)
                     .toFixed(2)}
                 </td>
                 <td></td>
@@ -550,13 +589,13 @@ function App() {
         <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-green-500">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Strengths</h3>
           <div className="space-y-3">
-            {strengths.map((item) => (
+            {strengths.map((item: SwotItem) => (
               <div key={item.id} className="flex items-start space-x-3">
                 <div className="flex-1">
                   <input
                     type="text"
                     value={item.description}
-                    onChange={(e) => updateSwotItem('strengths', item.id, e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateSwotItem('strengths', item.id, e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                     placeholder="Enter strength"
                   />
@@ -576,13 +615,13 @@ function App() {
         <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-red-500">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Weaknesses</h3>
           <div className="space-y-3">
-            {weaknesses.map((item) => (
+            {weaknesses.map((item: SwotItem) => (
               <div key={item.id} className="flex items-start space-x-3">
                 <div className="flex-1">
                   <input
                     type="text"
                     value={item.description}
-                    onChange={(e) => updateSwotItem('weaknesses', item.id, e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateSwotItem('weaknesses', item.id, e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                     placeholder="Enter weakness"
                   />
@@ -602,13 +641,13 @@ function App() {
         <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-blue-500">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Opportunities</h3>
           <div className="space-y-3">
-            {opportunities.map((item) => (
+            {opportunities.map((item: SwotItem) => (
               <div key={item.id} className="flex items-start space-x-3">
                 <div className="flex-1">
                   <input
                     type="text"
                     value={item.description}
-                    onChange={(e) => updateSwotItem('opportunities', item.id, e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateSwotItem('opportunities', item.id, e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Enter opportunity"
                   />
@@ -628,13 +667,13 @@ function App() {
         <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-yellow-500">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Threats</h3>
           <div className="space-y-3">
-            {threats.map((item) => (
+            {threats.map((item: SwotItem) => (
               <div key={item.id} className="flex items-start space-x-3">
                 <div className="flex-1">
                   <input
                     type="text"
                     value={item.description}
-                    onChange={(e) => updateSwotItem('threats', item.id, e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateSwotItem('threats', item.id, e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
                     placeholder="Enter threat"
                   />
@@ -720,13 +759,13 @@ function App() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {ksfItems.map((item) => (
+                {ksfItems.map((item: KsfItem) => (
                   <tr key={item.id}>
                     <td className="px-6 py-4">
                       <input
                         type="text"
                         value={item.description}
-                        onChange={(e) => updateKsfItem(item.id, 'description', e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateKsfItem(item.id, 'description', e.target.value)}
                         className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                         placeholder="Enter success factor"
                       />
@@ -735,7 +774,7 @@ function App() {
                       <input
                         type="text"
                         value={item.target}
-                        onChange={(e) => updateKsfItem(item.id, 'target', e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateKsfItem(item.id, 'target', e.target.value)}
                         className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                         placeholder="Enter target"
                       />
@@ -744,7 +783,7 @@ function App() {
                       <input
                         type="text"
                         value={item.measure}
-                        onChange={(e) => updateKsfItem(item.id, 'measure', e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateKsfItem(item.id, 'measure', e.target.value)}
                         className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                         placeholder="Enter measure"
                       />
@@ -753,7 +792,7 @@ function App() {
                       <input
                         type="number"
                         value={item.weight}
-                        onChange={(e) => updateKsfItem(item.id, 'weight', parseFloat(e.target.value))}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateKsfItem(item.id, 'weight', parseFloat(e.target.value))}
                         min="0"
                         max="100"
                         step="1"
@@ -764,7 +803,7 @@ function App() {
                       <input
                         type="number"
                         value={item.performance}
-                        onChange={(e) => updateKsfItem(item.id, 'performance', parseFloat(e.target.value))}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateKsfItem(item.id, 'performance', parseFloat(e.target.value))}
                         min="0"
                         max="100"
                         step="1"
@@ -816,17 +855,40 @@ function App() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm">
+    <div className="min-h-screen bg-gray-100">
+      <div className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
+          <div className="flex justify-between items-center py-6">
             <div className="flex items-center">
-              <BarChart3 className="h-8 w-8 text-black" />
-              <span className="ml-2 text-xl font-semibold text-gray-900">Strategic Framework</span>
+              <Layout className="h-8 w-8 mr-2" />
+              <h1 className="text-2xl font-semibold text-gray-900">Strategic Management Tool</h1>
+            </div>
+            <div className="flex space-x-4">
+              <button
+                onClick={handleSave}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Save to File
+              </button>
+              <button
+                onClick={handleLoad}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Load from File
+              </button>
+              <button
+                onClick={saveToSupabase}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-black hover:bg-gray-800"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Save to Cloud
+              </button>
             </div>
           </div>
         </div>
-      </nav>
+      </div>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-lg shadow">
@@ -888,13 +950,6 @@ function App() {
               <button className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                 <FileSpreadsheet className="h-4 w-4 mr-2" />
                 Export
-              </button>
-              <button 
-                onClick={saveToSupabase}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-black hover:bg-gray-800"
-              >
-                <Save className="h-4 w-4 mr-2" />
-                Save Analysis
               </button>
             </div>
           </div>
