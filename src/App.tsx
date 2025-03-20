@@ -423,135 +423,44 @@ function App() {
     };
   };
 
-  const renderMatrixTab = (type: 'ife' | 'efe') => (
+  const renderIfeTab = () => (
     <div className="p-6">
-      <div className="mb-6 flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-gray-900">
-          {type === 'ife' ? 'Internal Factors' : 'External Factors'}
-        </h2>
-        <button
-          onClick={() => addFactor(type)}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-black hover:bg-gray-800"
-        >
-          <PlusCircle className="h-4 w-4 mr-2" />
-          Add Factor
-        </button>
+      <h2 className="text-xl font-semibold text-gray-900">IFE Matrix</h2>
+      <div className="space-y-3">
+        {ifeFactors.map((factor) => (
+          <div key={factor.id} className="flex items-start space-x-3 bg-white p-3 rounded-lg shadow-sm">
+            <div className="flex-1">
+              <input
+                type="text"
+                value={factor.description}
+                onChange={(e) => updateFactor('ife', factor.id, 'description', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                placeholder="Enter IFE factor"
+              />
+            </div>
+          </div>
+        ))}
       </div>
+    </div>
+  );
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead>
-              <tr>
-                <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Description
-                </th>
-                <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Weight (0-1)
-                </th>
-                <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Rating (1-4)
-                </th>
-                <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Score
-                </th>
-                <th className="px-6 py-3 bg-gray-50"></th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {(type === 'ife' ? ifeFactors : efeFactors).map((factor: Factor) => (
-                <tr key={factor.id}>
-                  <td className="px-6 py-4">
-                    <input
-                      type="text"
-                      value={factor.description}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateFactor(type, factor.id, 'description', e.target.value)}
-                      className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                      placeholder="Enter factor description"
-                    />
-                  </td>
-                  <td className="px-6 py-4">
-                    <input
-                      type="number"
-                      value={factor.weight}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateFactor(type, factor.id, 'weight', parseFloat(e.target.value))}
-                      min="0"
-                      max="1"
-                      step="0.01"
-                      className="block w-24 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                  </td>
-                  <td className="px-6 py-4">
-                    <select
-                      value={factor.rating}
-                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateFactor(type, factor.id, 'rating', parseInt(e.target.value))}
-                      className="block w-24 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    >
-                      <option value={1}>1 - Poor</option>
-                      <option value={2}>2 - Fair</option>
-                      <option value={3}>3 - Good</option>
-                      <option value={4}>4 - Superior</option>
-                    </select>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">
-                    {(factor.weight * factor.rating).toFixed(2)}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button
-                      onClick={() => deleteFactor(type, factor.id)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      <Trash2 className="h-5 w-5" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr>
-                <td className="px-6 py-4 font-medium">Total</td>
-                <td className="px-6 py-4">
-                  {(type === 'ife' ? ifeFactors : efeFactors)
-                    .reduce((sum: number, factor: Factor) => sum + factor.weight, 0)
-                    .toFixed(2)}
-                </td>
-                <td></td>
-                <td className="px-6 py-4 font-medium">
-                  {calculateTotal(type === 'ife' ? ifeFactors : efeFactors).toFixed(2)}
-                </td>
-                <td></td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-        
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-medium mb-4">Factor Analysis</h3>
-          <Radar
-            data={getMatrixRadarData(type === 'ife' ? ifeFactors : efeFactors)}
-            options={{
-              responsive: true,
-              plugins: {
-                legend: {
-                  position: 'top' as const,
-                },
-                title: {
-                  display: true,
-                  text: `${type.toUpperCase()} Matrix Analysis`,
-                },
-              },
-              scales: {
-                r: {
-                  beginAtZero: true,
-                  max: 4,
-                  ticks: {
-                    stepSize: 1,
-                  },
-                },
-              },
-            }}
-          />
-        </div>
+  const renderEfeTab = () => (
+    <div className="p-6">
+      <h2 className="text-xl font-semibold text-gray-900">EFE Matrix</h2>
+      <div className="space-y-3">
+        {efeFactors.map((factor) => (
+          <div key={factor.id} className="flex items-start space-x-3 bg-white p-3 rounded-lg shadow-sm">
+            <div className="flex-1">
+              <input
+                type="text"
+                value={factor.description}
+                onChange={(e) => updateFactor('efe', factor.id, 'description', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                placeholder="Enter EFE factor"
+              />
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -947,7 +856,8 @@ function App() {
 
           {activeTab === 'swot' && renderSwotTab()}
           {activeTab === 'ksf' && renderKsfTab()}
-          {(activeTab === 'ife' || activeTab === 'efe') && renderMatrixTab(activeTab)}
+          {activeTab === 'ife' && renderIfeTab()}
+          {activeTab === 'efe' && renderEfeTab()}
 
           <div className="p-6 border-t border-gray-200 bg-gray-50">
             <div className="flex justify-end space-x-4">
