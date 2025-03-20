@@ -83,13 +83,16 @@ const CompetitiveProfileMatrix: React.FC<CompetitiveProfileMatrixProps> = ({
       .map((competitor, index) => ({
         label: competitor.name,
         data: ksf.map(factor => competitor.ratings[factor.id] || 0),
-        backgroundColor: `rgba(${index * 50}, 99, 132, 0.2)`,
-        borderColor: `rgba(${index * 50}, 99, 132, 1)`,
+        backgroundColor: `rgba(${(index * 50) % 255}, ${(99 + index * 40) % 255}, ${(132 + index * 30) % 255}, 0.2)`,
+        borderColor: `rgba(${(index * 50) % 255}, ${(99 + index * 40) % 255}, ${(132 + index * 30) % 255}, 1)`,
         borderWidth: 1,
+        pointRadius: 4,
       })),
   };
 
   const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
     scales: {
       r: {
         angleLines: {
@@ -97,6 +100,10 @@ const CompetitiveProfileMatrix: React.FC<CompetitiveProfileMatrixProps> = ({
         },
         suggestedMin: 0,
         suggestedMax: 4,
+        ticks: {
+          stepSize: 1,
+          backdropColor: 'rgba(0, 0, 0, 0)'
+        }
       },
     },
     plugins: {
@@ -156,6 +163,9 @@ const CompetitiveProfileMatrix: React.FC<CompetitiveProfileMatrixProps> = ({
               >
                 <Trash2 className="w-4 h-4" />
               </button>
+              <span className="ml-2 text-sm text-gray-600">
+                Score: {calculateScore(competitor).toFixed(2)}
+              </span>
             </div>
           ))}
         </div>
@@ -187,20 +197,23 @@ const CompetitiveProfileMatrix: React.FC<CompetitiveProfileMatrixProps> = ({
 
       {/* Matrix Table */}
       <div className="overflow-x-auto mb-6">
+        <h3 className="text-lg font-semibold mb-2">Competitive Profile Matrix</h3>
         <table className="min-w-full table-auto border-collapse border border-gray-200">
           <thead>
             <tr className="bg-gray-100">
-              <th rowSpan="2" className="border p-2 text-left">Key Success Factors</th>
-              <th rowSpan="2" className="border p-2 text-center w-24">Industry Weight</th>
+              <th className="border p-2 text-left" rowSpan={2}>Key Success Factors</th>
+              <th className="border p-2 text-center" rowSpan={2}>Industry Weight</th>
               {competitors.map(comp => (
-                <th colSpan="2" key={comp.id} className="border p-2 text-center bg-blue-50">{comp.name}</th>
+                <th key={comp.id} className="border p-2 text-center bg-blue-50" colSpan={2}>
+                  {comp.name}
+                </th>
               ))}
             </tr>
             <tr className="bg-gray-100">
               {competitors.map(comp => (
                 <React.Fragment key={comp.id}>
-                  <th className="border p-2 text-center w-24 bg-gray-50">Rating</th>
-                  <th className="border p-2 text-center w-24 bg-blue-50">Score</th>
+                  <th className="border p-2 text-center bg-gray-50">Rating</th>
+                  <th className="border p-2 text-center bg-blue-50">Score</th>
                 </React.Fragment>
               ))}
             </tr>
@@ -209,7 +222,7 @@ const CompetitiveProfileMatrix: React.FC<CompetitiveProfileMatrixProps> = ({
             {ksf.map(factor => (
               <tr key={factor.id}>
                 <td className="border p-2">{factor.name}</td>
-                <td className="border p-2 text-center font-medium">{factor.weight.toFixed(2)}</td>
+                <td className="border p-2 text-center">{factor.weight.toFixed(2)}</td>
                 {competitors.map(comp => (
                   <React.Fragment key={comp.id}>
                     <td className="border p-2 text-center bg-gray-50">
@@ -222,7 +235,7 @@ const CompetitiveProfileMatrix: React.FC<CompetitiveProfileMatrixProps> = ({
                         className="w-16 px-2 py-1 border rounded text-center"
                       />
                     </td>
-                    <td className="border p-2 text-center bg-blue-50">
+                    <td className="border p-2 text-center bg-blue-50 font-medium">
                       {(factor.weight * (comp.ratings[factor.id] || 0)).toFixed(2)}
                     </td>
                   </React.Fragment>
@@ -245,9 +258,14 @@ const CompetitiveProfileMatrix: React.FC<CompetitiveProfileMatrixProps> = ({
       </div>
 
       {/* Radar Chart */}
-      <div className="w-full h-[400px]">
-        <Radar data={chartData} options={chartOptions} />
-      </div>
+      {selectedCompetitors.length > 0 && (
+        <div className="w-full h-[400px] border p-4 rounded-lg bg-white">
+          <h3 className="text-lg font-semibold mb-2">Competitive Radar Chart</h3>
+          <div className="w-full h-[350px]">
+            <Radar data={chartData} options={chartOptions} />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
