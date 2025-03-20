@@ -1,21 +1,21 @@
 /** @jsxImportSource react */
 import React, { useState, useEffect, ChangeEvent } from 'react';
 import { FileSpreadsheet, Layout, PlusCircle, Save, Trash2, ListChecks, Target, Download, Upload } from 'lucide-react';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, RadialLinearScale, PointElement, LineElement, Filler } from 'chart.js';
+import { ChartData, ChartOptions } from 'chart.js/auto';
+import { ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, BarElement, RadarController, RadialLinearScale } from 'chart.js';
 import { Bar, Radar } from 'react-chartjs-2';
 import { supabase } from './lib/supabase';
 import { saveToFile, loadFromFile, autoSave, hasActiveFile } from './lib/fileSystem';
-import CompetitiveProfileMatrix from './components/CompetitiveProfileMatrix';
 
 // Register ChartJS components
 ChartJS.register(
   CategoryScale,
   LinearScale,
-  BarElement,
-  RadialLinearScale,
   PointElement,
   LineElement,
-  Filler,
+  BarElement,
+  RadarController,
+  RadialLinearScale,
   Title,
   Tooltip,
   Legend
@@ -43,12 +43,6 @@ interface KsfItem {
   performance: number;
 }
 
-interface Competitor {
-  id: string;
-  name: string;
-  ratings: { [key: string]: number };
-}
-
 interface StrategicData {
   swot: {
     strengths: SwotItem[];
@@ -61,7 +55,6 @@ interface StrategicData {
     efe: Factor[];
   };
   ksf: KsfItem[];
-  competitors: Competitor[];
 }
 
 declare namespace JSX {
@@ -84,7 +77,7 @@ declare namespace JSX {
 }
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'swot' | 'ife' | 'efe' | 'ksf' | 'cpm'>('swot');
+  const [activeTab, setActiveTab] = useState<'swot' | 'ife' | 'efe' | 'ksf'>('swot');
   const [ifeFactors, setIfeFactors] = useState<Factor[]>([]);
   const [efeFactors, setEfeFactors] = useState<Factor[]>([]);
   const [strengths, setStrengths] = useState<SwotItem[]>([]);
@@ -92,11 +85,6 @@ function App() {
   const [opportunities, setOpportunities] = useState<SwotItem[]>([]);
   const [threats, setThreats] = useState<SwotItem[]>([]);
   const [ksfItems, setKsfItems] = useState<KsfItem[]>([]);
-  const [competitors, setCompetitors] = useState<Competitor[]>([
-    { id: '1', name: 'Our Company', ratings: {} },
-    { id: '2', name: 'Competitor 1', ratings: {} },
-    { id: '3', name: 'Competitor 2', ratings: {} },
-  ]);
 
   // Load data from Supabase on component mount
   useEffect(() => {
@@ -116,7 +104,6 @@ function App() {
           setIfeFactors(swotData.ife_factors || []);
           setEfeFactors(swotData.efe_factors || []);
           setKsfItems(swotData.ksf_items || []);
-          setCompetitors(swotData.competitors || []);
         }
       } catch (error) {
         console.error('Error loading data:', error);
@@ -170,7 +157,6 @@ function App() {
           ife_factors: ifeFactors,
           efe_factors: efeFactors,
           ksf_items: ksfItems,
-          competitors,
         });
 
       alert('Data saved successfully!');
@@ -193,7 +179,6 @@ function App() {
         efe: efeFactors
       },
       ksf: ksfItems,
-      competitors,
     };
 
     const result = await saveToFile(data);
@@ -212,7 +197,6 @@ function App() {
       setIfeFactors(result.data.matrices.ife);
       setEfeFactors(result.data.matrices.efe);
       setKsfItems(result.data.ksf);
-      setCompetitors(result.data.competitors);
       alert('Data loaded successfully!');
     }
   };
@@ -232,11 +216,10 @@ function App() {
           efe: efeFactors
         },
         ksf: ksfItems,
-        competitors,
       };
       autoSave(data);
     }
-  }, [strengths, weaknesses, opportunities, threats, ifeFactors, efeFactors, ksfItems, competitors]);
+  }, [strengths, weaknesses, opportunities, threats, ifeFactors, efeFactors, ksfItems]);
 
   // Type-safe event handlers
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>, id: string, field: keyof KsfItem) => {
@@ -317,11 +300,6 @@ function App() {
     setKsfItems((prev: KsfItem[]) => prev.map(item =>
       item.id === id ? { ...item, [field]: value } : item
     ));
-  };
-
-  const handleUpdateCompetitors = (newCompetitors: Competitor[]) => {
-    setCompetitors(newCompetitors);
-    saveToSupabase();
   };
 
   const deleteFactor = (type: 'ife' | 'efe', id: string) => {
@@ -864,126 +842,6 @@ function App() {
     </div>
   );
 
-  const renderCpmTab = () => (
-    <div className="p-6">
-      <div className="mb-6 flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-gray-900">Competitive Profile Matrix</h2>
-        <button
-          onClick={() => setCompetitors([...competitors, { id: Date.now().toString(), name: '', ratings: {} }])}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-black hover:bg-gray-800"
-        >
-          <PlusCircle className="h-4 w-4 mr-2" />
-          Add Competitor
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead>
-              <tr>
-                <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Competitor
-                </th>
-                {ksfItems.map((ksf) => (
-                  <th key={ksf.id} className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {ksf.description}
-                  </th>
-                ))}
-                <th className="px-6 py-3 bg-gray-50"></th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {competitors.map((competitor, index) => (
-                <tr key={competitor.id}>
-                  <td className="px-6 py-4">
-                    <input
-                      type="text"
-                      value={competitor.name}
-                      onChange={(e) => {
-                        const newCompetitors = [...competitors];
-                        newCompetitors[index].name = e.target.value;
-                        setCompetitors(newCompetitors);
-                      }}
-                      className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                      placeholder="Competitor name"
-                    />
-                  </td>
-                  {ksfItems.map((ksf) => (
-                    <td key={ksf.id} className="px-6 py-4">
-                      <input
-                        type="number"
-                        min="1"
-                        max="4"
-                        value={competitor.ratings[ksf.id] || ''}
-                        onChange={(e) => {
-                          const newCompetitors = [...competitors];
-                          newCompetitors[index].ratings[ksf.id] = Number(e.target.value);
-                          setCompetitors(newCompetitors);
-                        }}
-                        className="block w-24 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                      />
-                    </td>
-                  ))}
-                  <td className="px-6 py-4 text-right">
-                    <button
-                      onClick={() => setCompetitors(competitors.filter((_, i) => i !== index))}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      <Trash2 className="h-5 w-5" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-medium mb-4">Competitor Analysis</h3>
-          <Radar
-            data={{
-              labels: competitors.map((competitor) => competitor.name),
-              datasets: [
-                {
-                  label: 'Competitor Ratings',
-                  data: competitors.map((competitor) => {
-                    const ratings = Object.values(competitor.ratings);
-                    return ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length;
-                  }),
-                  backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                  borderColor: 'rgba(54, 162, 235, 1)',
-                  borderWidth: 2,
-                },
-              ],
-            }}
-            options={{
-              responsive: true,
-              plugins: {
-                legend: {
-                  position: 'top' as const,
-                },
-                title: {
-                  display: true,
-                  text: 'Competitor Analysis',
-                },
-              },
-              scales: {
-                r: {
-                  beginAtZero: true,
-                  max: 4,
-                  ticks: {
-                    stepSize: 1,
-                  },
-                },
-              },
-            }}
-          />
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="bg-white shadow">
@@ -1068,20 +926,12 @@ function App() {
                 <ListChecks className="h-4 w-4 mr-2" />
                 EFE Matrix
               </button>
-              <button
-                className={`px-4 py-2 rounded-t-lg ${activeTab === 'cpm' ? 'bg-white text-blue-600 border-t border-x' : 'bg-gray-100'}`}
-                onClick={() => setActiveTab('cpm')}
-              >
-                <ListChecks className="w-5 h-5 inline-block mr-2" />
-                CPM
-              </button>
             </nav>
           </div>
 
           {activeTab === 'swot' && renderSwotTab()}
           {activeTab === 'ksf' && renderKsfTab()}
           {(activeTab === 'ife' || activeTab === 'efe') && renderMatrixTab(activeTab)}
-          {activeTab === 'cpm' && renderCpmTab()}
 
           <div className="p-6 border-t border-gray-200 bg-gray-50">
             <div className="flex justify-end space-x-4">
