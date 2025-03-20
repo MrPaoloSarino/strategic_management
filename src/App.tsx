@@ -253,27 +253,6 @@ function App() {
     setEfeFactors((prev) => updateWeights([...opportunities, ...threats], prev));
   }, [strengths, weaknesses, opportunities, threats]);
 
-  // Type-safe event handlers
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement>, id: string, field: keyof KsfItem) => {
-    const value = e.target.type === 'number' ? parseFloat(e.target.value) : e.target.value;
-    updateKsfItem(id, field, value);
-  };
-
-  const addFactor = (type: 'ife' | 'efe') => {
-    const newFactor: Factor = {
-      id: Math.random().toString(36).substr(2, 9),
-      description: '',
-      weight: 0,
-      rating: 1
-    };
-    
-    if (type === 'ife') {
-      setIfeFactors([...ifeFactors, newFactor]);
-    } else {
-      setEfeFactors([...efeFactors, newFactor]);
-    }
-  };
-
   const addSwotItem = (type: keyof StrategicData['swot']) => {
     const newItem: SwotItem = {
       id: Math.random().toString(36).substr(2, 9),
@@ -283,16 +262,20 @@ function App() {
 
     switch (type) {
       case 'strengths':
-        setStrengths([...strengths, newItem]);
+        setStrengths((prev) => [...prev, newItem]);
+        setIfeFactors((prev) => [...prev, { id: newItem.id, description: newItem.description, weight: newItem.weight, rating: 0 }]);
         break;
       case 'weaknesses':
-        setWeaknesses([...weaknesses, newItem]);
+        setWeaknesses((prev) => [...prev, newItem]);
+        setIfeFactors((prev) => [...prev, { id: newItem.id, description: newItem.description, weight: newItem.weight, rating: 0 }]);
         break;
       case 'opportunities':
-        setOpportunities([...opportunities, newItem]);
+        setOpportunities((prev) => [...prev, newItem]);
+        setEfeFactors((prev) => [...prev, { id: newItem.id, description: newItem.description, weight: newItem.weight, rating: 0 }]);
         break;
       case 'threats':
-        setThreats([...threats, newItem]);
+        setThreats((prev) => [...prev, newItem]);
+        setEfeFactors((prev) => [...prev, { id: newItem.id, description: newItem.description, weight: newItem.weight, rating: 0 }]);
         break;
     }
   };
