@@ -864,6 +864,126 @@ function App() {
     </div>
   );
 
+  const renderCpmTab = () => (
+    <div className="p-6">
+      <div className="mb-6 flex justify-between items-center">
+        <h2 className="text-xl font-semibold text-gray-900">Competitive Profile Matrix</h2>
+        <button
+          onClick={() => setCompetitors([...competitors, { id: Date.now().toString(), name: '', ratings: {} }])}
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-black hover:bg-gray-800"
+        >
+          <PlusCircle className="h-4 w-4 mr-2" />
+          Add Competitor
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead>
+              <tr>
+                <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Competitor
+                </th>
+                {ksfItems.map((ksf) => (
+                  <th key={ksf.id} className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {ksf.description}
+                  </th>
+                ))}
+                <th className="px-6 py-3 bg-gray-50"></th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {competitors.map((competitor, index) => (
+                <tr key={competitor.id}>
+                  <td className="px-6 py-4">
+                    <input
+                      type="text"
+                      value={competitor.name}
+                      onChange={(e) => {
+                        const newCompetitors = [...competitors];
+                        newCompetitors[index].name = e.target.value;
+                        setCompetitors(newCompetitors);
+                      }}
+                      className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      placeholder="Competitor name"
+                    />
+                  </td>
+                  {ksfItems.map((ksf) => (
+                    <td key={ksf.id} className="px-6 py-4">
+                      <input
+                        type="number"
+                        min="1"
+                        max="4"
+                        value={competitor.ratings[ksf.id] || ''}
+                        onChange={(e) => {
+                          const newCompetitors = [...competitors];
+                          newCompetitors[index].ratings[ksf.id] = Number(e.target.value);
+                          setCompetitors(newCompetitors);
+                        }}
+                        className="block w-24 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      />
+                    </td>
+                  ))}
+                  <td className="px-6 py-4 text-right">
+                    <button
+                      onClick={() => setCompetitors(competitors.filter((_, i) => i !== index))}
+                      className="text-red-600 hover:text-red-900"
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-medium mb-4">Competitor Analysis</h3>
+          <Radar
+            data={{
+              labels: competitors.map((competitor) => competitor.name),
+              datasets: [
+                {
+                  label: 'Competitor Ratings',
+                  data: competitors.map((competitor) => {
+                    const ratings = Object.values(competitor.ratings);
+                    return ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length;
+                  }),
+                  backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                  borderColor: 'rgba(54, 162, 235, 1)',
+                  borderWidth: 2,
+                },
+              ],
+            }}
+            options={{
+              responsive: true,
+              plugins: {
+                legend: {
+                  position: 'top' as const,
+                },
+                title: {
+                  display: true,
+                  text: 'Competitor Analysis',
+                },
+              },
+              scales: {
+                r: {
+                  beginAtZero: true,
+                  max: 4,
+                  ticks: {
+                    stepSize: 1,
+                  },
+                },
+              },
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="bg-white shadow">
@@ -961,15 +1081,7 @@ function App() {
           {activeTab === 'swot' && renderSwotTab()}
           {activeTab === 'ksf' && renderKsfTab()}
           {(activeTab === 'ife' || activeTab === 'efe') && renderMatrixTab(activeTab)}
-          {activeTab === 'cpm' && (
-            <div className="p-6">
-              <CompetitiveProfileMatrix
-                competitors={competitors}
-                ksf={ksfItems}
-                onUpdateCompetitors={handleUpdateCompetitors}
-              />
-            </div>
-          )}
+          {activeTab === 'cpm' && renderCpmTab()}
 
           <div className="p-6 border-t border-gray-200 bg-gray-50">
             <div className="flex justify-end space-x-4">
