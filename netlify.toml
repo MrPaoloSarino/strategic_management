@@ -10,10 +10,10 @@
     Content-Type = "text/css"
 
 [[headers]]
-  for = "/*.js"
+  for = "/*"
   [headers.values]
-    Content-Type = "application/javascript"
-    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
 
 [build]
   command = "npm run build"
