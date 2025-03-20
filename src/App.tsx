@@ -34,6 +34,8 @@ type KsfItem = {
   description: string;
   target: string;
   measure: string;
+  weight: number;
+  performance: number;
 };
 
 function App() {
@@ -218,7 +220,9 @@ function App() {
       id: Math.random().toString(36).substr(2, 9),
       description: '',
       target: '',
-      measure: ''
+      measure: '',
+      weight: 0,
+      performance: 0
     };
     setKsfItems([...ksfItems, newItem]);
   };
@@ -258,7 +262,7 @@ function App() {
     ));
   };
 
-  const updateKsfItem = (id: string, field: keyof KsfItem, value: string) => {
+  const updateKsfItem = (id: string, field: keyof KsfItem, value: string | number) => {
     setKsfItems(ksfItems.map(item =>
       item.id === id ? { ...item, [field]: value } : item
     ));
@@ -289,6 +293,13 @@ function App() {
 
   const calculateTotal = (factors: Factor[]) => {
     return factors.reduce((sum, factor) => sum + (factor.weight * factor.rating), 0);
+  };
+
+  const calculateKsfScore = (ksfItems: KsfItem[]) => {
+    return ksfItems.reduce((total, item) => {
+      const score = (item.weight / 100) * (item.performance / 100) * 100;
+      return total + score;
+    }, 0);
   };
 
   const getMatrixRadarData = (factors: Factor[]) => {
@@ -343,17 +354,24 @@ function App() {
     };
   };
 
-  const getKsfRadarData = () => {
+  const getKsfRadarData = (ksfItems: KsfItem[]) => {
     return {
       labels: ksfItems.map(item => item.description || 'Unnamed KSF'),
       datasets: [
         {
           label: 'Target Achievement',
-          data: ksfItems.map(() => Math.random() * 100), // Simulated progress data
+          data: ksfItems.map(item => (item.performance / 100) * 100),
           backgroundColor: 'rgba(54, 162, 235, 0.2)',
           borderColor: 'rgba(54, 162, 235, 1)',
           borderWidth: 2,
         },
+        {
+          label: 'Weighted Score',
+          data: ksfItems.map(item => (item.weight / 100) * (item.performance / 100) * 100),
+          backgroundColor: 'rgba(255, 99, 132, 0.2)',
+          borderColor: 'rgba(255, 99, 132, 1)',
+          borderWidth: 2,
+        }
       ],
     };
   };
@@ -692,6 +710,12 @@ function App() {
                   <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Measure
                   </th>
+                  <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Weight (0-100)
+                  </th>
+                  <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Performance (0-100)
+                  </th>
                   <th className="px-6 py-3 bg-gray-50"></th>
                 </tr>
               </thead>
@@ -725,6 +749,28 @@ function App() {
                         placeholder="Enter measure"
                       />
                     </td>
+                    <td className="px-6 py-4">
+                      <input
+                        type="number"
+                        value={item.weight}
+                        onChange={(e) => updateKsfItem(item.id, 'weight', parseFloat(e.target.value))}
+                        min="0"
+                        max="100"
+                        step="1"
+                        className="block w-24 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      />
+                    </td>
+                    <td className="px-6 py-4">
+                      <input
+                        type="number"
+                        value={item.performance}
+                        onChange={(e) => updateKsfItem(item.id, 'performance', parseFloat(e.target.value))}
+                        min="0"
+                        max="100"
+                        step="1"
+                        className="block w-24 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      />
+                    </td>
                     <td className="px-6 py-4 text-right">
                       <button
                         onClick={() => deleteKsfItem(item.id)}
@@ -743,7 +789,7 @@ function App() {
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-lg font-medium mb-4">KSF Progress Radar</h3>
           <Radar
-            data={getKsfRadarData()}
+            data={getKsfRadarData(ksfItems)}
             options={{
               responsive: true,
               plugins: {
@@ -763,6 +809,7 @@ function App() {
               },
             }}
           />
+          <p className="text-lg font-medium mt-4">Total KSF Score: {calculateKsfScore(ksfItems).toFixed(2)}</p>
         </div>
       </div>
     </div>
