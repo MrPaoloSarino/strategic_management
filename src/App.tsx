@@ -362,52 +362,149 @@ function App() {
 
   const renderSwotTab = () => (
     <div className="p-6">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {[
-              { title: 'Strengths', type: 'strengths' as const, items: strengths },
-              { title: 'Weaknesses', type: 'weaknesses' as const, items: weaknesses },
-              { title: 'Opportunities', type: 'opportunities' as const, items: opportunities },
-              { title: 'Threats', type: 'threats' as const, items: threats }
-            ].map(({ title, type, items }) => (
-              <div key={type} className="bg-white rounded-lg shadow p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-medium text-gray-900">{title}</h3>
-                  <button
-                    onClick={() => addSwotItem(type)}
-                    className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
-                  >
-                    <PlusCircle className="h-4 w-4 mr-1" />
-                    Add
-                  </button>
+      <div className="mb-6 flex justify-between items-center">
+        <h2 className="text-xl font-semibold text-gray-900">SWOT Analysis</h2>
+        <div className="space-x-2">
+          <button
+            onClick={() => addSwotItem('strengths')}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700"
+          >
+            <PlusCircle className="h-4 w-4 mr-2" />
+            Add Strength
+          </button>
+          <button
+            onClick={() => addSwotItem('weaknesses')}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700"
+          >
+            <PlusCircle className="h-4 w-4 mr-2" />
+            Add Weakness
+          </button>
+          <button
+            onClick={() => addSwotItem('opportunities')}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+          >
+            <PlusCircle className="h-4 w-4 mr-2" />
+            Add Opportunity
+          </button>
+          <button
+            onClick={() => addSwotItem('threats')}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-yellow-600 hover:bg-yellow-700"
+          >
+            <PlusCircle className="h-4 w-4 mr-2" />
+            Add Threat
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Strengths Card */}
+        <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-green-500">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Strengths</h3>
+          <div className="space-y-3">
+            {strengths.map((item) => (
+              <div key={item.id} className="flex items-start space-x-3">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={item.description}
+                    onChange={(e) => updateSwotItem('strengths', item.id, e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    placeholder="Enter strength"
+                  />
                 </div>
-                <div className="space-y-3">
-                  {items.map(item => (
-                    <div key={item.id} className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={item.description}
-                        onChange={(e) => updateSwotItem(type, item.id, e.target.value)}
-                        className="block flex-1 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        placeholder={`Enter ${title.toLowerCase().slice(0, -1)}`}
-                      />
-                      <button
-                        onClick={() => deleteSwotItem(type, item.id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        <Trash2 className="h-5 w-5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                <button
+                  onClick={() => deleteSwotItem('strengths', item.id)}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <Trash2 className="h-5 w-5" />
+                </button>
               </div>
             ))}
           </div>
         </div>
-        
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-medium mb-4">SWOT Analysis Overview</h3>
+
+        {/* Weaknesses Card */}
+        <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-red-500">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Weaknesses</h3>
+          <div className="space-y-3">
+            {weaknesses.map((item) => (
+              <div key={item.id} className="flex items-start space-x-3">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={item.description}
+                    onChange={(e) => updateSwotItem('weaknesses', item.id, e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                    placeholder="Enter weakness"
+                  />
+                </div>
+                <button
+                  onClick={() => deleteSwotItem('weaknesses', item.id)}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <Trash2 className="h-5 w-5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Opportunities Card */}
+        <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-blue-500">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Opportunities</h3>
+          <div className="space-y-3">
+            {opportunities.map((item) => (
+              <div key={item.id} className="flex items-start space-x-3">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={item.description}
+                    onChange={(e) => updateSwotItem('opportunities', item.id, e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter opportunity"
+                  />
+                </div>
+                <button
+                  onClick={() => deleteSwotItem('opportunities', item.id)}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <Trash2 className="h-5 w-5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Threats Card */}
+        <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-yellow-500">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Threats</h3>
+          <div className="space-y-3">
+            {threats.map((item) => (
+              <div key={item.id} className="flex items-start space-x-3">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={item.description}
+                    onChange={(e) => updateSwotItem('threats', item.id, e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                    placeholder="Enter threat"
+                  />
+                </div>
+                <button
+                  onClick={() => deleteSwotItem('threats', item.id)}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <Trash2 className="h-5 w-5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-8">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">SWOT Analysis Overview</h3>
+        <div className="bg-white rounded-lg shadow-lg p-6">
           <Bar
             data={getSwotChartData()}
             options={{
@@ -418,7 +515,15 @@ function App() {
                 },
                 title: {
                   display: true,
-                  text: 'SWOT Distribution',
+                  text: 'Number of Items in Each Category',
+                },
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  ticks: {
+                    stepSize: 1,
+                  },
                 },
               },
             }}
