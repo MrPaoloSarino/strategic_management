@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BarChart3, FileSpreadsheet, Layout, PlusCircle, Save, Trash2, ListChecks, Target } from 'lucide-react';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, RadialLinearScale, PointElement, LineElement, Filler } from 'chart.js';
 import { Bar, Radar } from 'react-chartjs-2';
+import { supabase, SwotData, MatrixData, KsfData } from './lib/supabase';
 
 ChartJS.register(
   CategoryScale,
@@ -37,13 +38,143 @@ type KsfItem = {
 
 function App() {
   const [activeTab, setActiveTab] = useState<'ife' | 'efe' | 'swot' | 'ksf'>('swot');
-  const [ifeFactors, setIfeFactors] = useState<Factor[]>([]);
-  const [efeFactors, setEfeFactors] = useState<Factor[]>([]);
-  const [strengths, setStrengths] = useState<SwotItem[]>([]);
-  const [weaknesses, setWeaknesses] = useState<SwotItem[]>([]);
-  const [opportunities, setOpportunities] = useState<SwotItem[]>([]);
-  const [threats, setThreats] = useState<SwotItem[]>([]);
-  const [ksfItems, setKsfItems] = useState<KsfItem[]>([]);
+  const [ifeFactors, setIfeFactors] = useState<Factor[]>(() => {
+    const saved = localStorage.getItem('ifeFactors');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [efeFactors, setEfeFactors] = useState<Factor[]>(() => {
+    const saved = localStorage.getItem('efeFactors');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [strengths, setStrengths] = useState<SwotItem[]>(() => {
+    const saved = localStorage.getItem('strengths');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [weaknesses, setWeaknesses] = useState<SwotItem[]>(() => {
+    const saved = localStorage.getItem('weaknesses');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [opportunities, setOpportunities] = useState<SwotItem[]>(() => {
+    const saved = localStorage.getItem('opportunities');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [threats, setThreats] = useState<SwotItem[]>(() => {
+    const saved = localStorage.getItem('threats');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [ksfItems, setKsfItems] = useState<KsfItem[]>(() => {
+    const saved = localStorage.getItem('ksfItems');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // Load data from Supabase on component mount
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Load SWOT data
+        const { data: swotData } = await supabase
+          .from('swot_analysis')
+          .select('*')
+          .single();
+        
+        if (swotData) {
+          setStrengths(swotData.strengths || []);
+          setWeaknesses(swotData.weaknesses || []);
+          setOpportunities(swotData.opportunities || []);
+          setThreats(swotData.threats || []);
+        }
+
+        // Load Matrix data
+        const { data: matrixData } = await supabase
+          .from('matrix_analysis')
+          .select('*')
+          .single();
+        
+        if (matrixData) {
+          setIfeFactors(matrixData.ife_factors || []);
+          setEfeFactors(matrixData.efe_factors || []);
+        }
+
+        // Load KSF data
+        const { data: ksfData } = await supabase
+          .from('ksf_analysis')
+          .select('*')
+          .single();
+        
+        if (ksfData) {
+          setKsfItems(ksfData.ksf_items || []);
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  // Save to localStorage whenever data changes
+  useEffect(() => {
+    localStorage.setItem('ifeFactors', JSON.stringify(ifeFactors));
+  }, [ifeFactors]);
+
+  useEffect(() => {
+    localStorage.setItem('efeFactors', JSON.stringify(efeFactors));
+  }, [efeFactors]);
+
+  useEffect(() => {
+    localStorage.setItem('strengths', JSON.stringify(strengths));
+  }, [strengths]);
+
+  useEffect(() => {
+    localStorage.setItem('weaknesses', JSON.stringify(weaknesses));
+  }, [weaknesses]);
+
+  useEffect(() => {
+    localStorage.setItem('opportunities', JSON.stringify(opportunities));
+  }, [opportunities]);
+
+  useEffect(() => {
+    localStorage.setItem('threats', JSON.stringify(threats));
+  }, [threats]);
+
+  useEffect(() => {
+    localStorage.setItem('ksfItems', JSON.stringify(ksfItems));
+  }, [ksfItems]);
+
+  // Save to Supabase
+  const saveToSupabase = async () => {
+    try {
+      // Save SWOT data
+      await supabase
+        .from('swot_analysis')
+        .upsert({
+          strengths,
+          weaknesses,
+          opportunities,
+          threats,
+        });
+
+      // Save Matrix data
+      await supabase
+        .from('matrix_analysis')
+        .upsert({
+          ife_factors: ifeFactors,
+          efe_factors: efeFactors,
+        });
+
+      // Save KSF data
+      await supabase
+        .from('ksf_analysis')
+        .upsert({
+          ksf_items: ksfItems,
+        });
+
+      alert('Data saved successfully!');
+    } catch (error) {
+      console.error('Error saving data:', error);
+      alert('Error saving data. Please try again.');
+    }
+  };
 
   const addFactor = (type: 'ife' | 'efe') => {
     const newFactor: Factor = {
@@ -235,7 +366,7 @@ function App() {
         </h2>
         <button
           onClick={() => addFactor(type)}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-black hover:bg-gray-800"
         >
           <PlusCircle className="h-4 w-4 mr-2" />
           Add Factor
@@ -367,28 +498,28 @@ function App() {
         <div className="space-x-2">
           <button
             onClick={() => addSwotItem('strengths')}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-black hover:bg-gray-800"
           >
             <PlusCircle className="h-4 w-4 mr-2" />
             Add Strength
           </button>
           <button
             onClick={() => addSwotItem('weaknesses')}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-black hover:bg-gray-800"
           >
             <PlusCircle className="h-4 w-4 mr-2" />
             Add Weakness
           </button>
           <button
             onClick={() => addSwotItem('opportunities')}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-black hover:bg-gray-800"
           >
             <PlusCircle className="h-4 w-4 mr-2" />
             Add Opportunity
           </button>
           <button
             onClick={() => addSwotItem('threats')}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-yellow-600 hover:bg-yellow-700"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-black hover:bg-gray-800"
           >
             <PlusCircle className="h-4 w-4 mr-2" />
             Add Threat
@@ -541,7 +672,7 @@ function App() {
             <h2 className="text-xl font-semibold text-gray-900">Key Success Factors</h2>
             <button
               onClick={addKsfItem}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-black hover:bg-gray-800"
             >
               <PlusCircle className="h-4 w-4 mr-2" />
               Add KSF
@@ -643,7 +774,7 @@ function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             <div className="flex items-center">
-              <BarChart3 className="h-8 w-8 text-blue-600" />
+              <BarChart3 className="h-8 w-8 text-black" />
               <span className="ml-2 text-xl font-semibold text-gray-900">Strategic Framework</span>
             </div>
           </div>
@@ -658,7 +789,7 @@ function App() {
                 onClick={() => setActiveTab('swot')}
                 className={`${
                   activeTab === 'swot'
-                    ? 'border-blue-500 text-blue-600'
+                    ? 'border-black text-black'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 } flex-1 py-4 px-1 text-center border-b-2 font-medium flex items-center justify-center`}
               >
@@ -669,7 +800,7 @@ function App() {
                 onClick={() => setActiveTab('ksf')}
                 className={`${
                   activeTab === 'ksf'
-                    ? 'border-blue-500 text-blue-600'
+                    ? 'border-black text-black'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 } flex-1 py-4 px-1 text-center border-b-2 font-medium flex items-center justify-center`}
               >
@@ -680,7 +811,7 @@ function App() {
                 onClick={() => setActiveTab('ife')}
                 className={`${
                   activeTab === 'ife'
-                    ? 'border-blue-500 text-blue-600'
+                    ? 'border-black text-black'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 } flex-1 py-4 px-1 text-center border-b-2 font-medium flex items-center justify-center`}
               >
@@ -691,7 +822,7 @@ function App() {
                 onClick={() => setActiveTab('efe')}
                 className={`${
                   activeTab === 'efe'
-                    ? 'border-blue-500 text-blue-600'
+                    ? 'border-black text-black'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 } flex-1 py-4 px-1 text-center border-b-2 font-medium flex items-center justify-center`}
               >
@@ -711,7 +842,10 @@ function App() {
                 <FileSpreadsheet className="h-4 w-4 mr-2" />
                 Export
               </button>
-              <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+              <button 
+                onClick={saveToSupabase}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-black hover:bg-gray-800"
+              >
                 <Save className="h-4 w-4 mr-2" />
                 Save Analysis
               </button>
