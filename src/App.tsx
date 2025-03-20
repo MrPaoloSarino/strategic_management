@@ -1,3 +1,4 @@
+/** @jsxImportSource react */
 import React, { useState, useEffect, ChangeEvent } from 'react';
 import { FileSpreadsheet, Layout, PlusCircle, Save, Trash2, ListChecks, Target, Download, Upload } from 'lucide-react';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, RadialLinearScale, PointElement, LineElement, Filler } from 'chart.js';
@@ -550,47 +551,51 @@ function App() {
 
   const renderSwotTab = () => (
     <div className="p-6">
-      <div className="mb-6 flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-gray-900">SWOT Analysis</h2>
-        <div className="space-x-2">
-          <button
-            onClick={() => addSwotItem('strengths')}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-black hover:bg-gray-800"
-          >
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Add Strength
-          </button>
-          <button
-            onClick={() => addSwotItem('weaknesses')}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-black hover:bg-gray-800"
-          >
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Add Weakness
-          </button>
-          <button
-            onClick={() => addSwotItem('opportunities')}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-black hover:bg-gray-800"
-          >
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Add Opportunity
-          </button>
-          <button
-            onClick={() => addSwotItem('threats')}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-black hover:bg-gray-800"
-          >
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Add Threat
-          </button>
-        </div>
+      <div className="flex justify-end space-x-4 mb-6">
+        <button
+          onClick={() => addSwotItem('strengths')}
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700"
+        >
+          <PlusCircle className="h-4 w-4 mr-2" />
+          Add Strength
+        </button>
+        <button
+          onClick={() => addSwotItem('weaknesses')}
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700"
+        >
+          <PlusCircle className="h-4 w-4 mr-2" />
+          Add Weakness
+        </button>
+        <button
+          onClick={() => addSwotItem('opportunities')}
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+        >
+          <PlusCircle className="h-4 w-4 mr-2" />
+          Add Opportunity
+        </button>
+        <button
+          onClick={() => addSwotItem('threats')}
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-yellow-600 hover:bg-yellow-700"
+        >
+          <PlusCircle className="h-4 w-4 mr-2" />
+          Add Threat
+        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Strengths Card */}
-        <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-green-500">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Strengths</h3>
+        <div className="bg-gradient-to-br from-green-50 to-white rounded-lg shadow-lg p-6 border-l-4 border-green-500 transform transition-all duration-300 hover:scale-105">
+          <div className="flex items-center mb-4">
+            <div className="p-2 bg-green-100 rounded-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 ml-3">Strengths</h3>
+          </div>
           <div className="space-y-3">
             {strengths.map((item: SwotItem) => (
-              <div key={item.id} className="flex items-start space-x-3">
+              <div key={item.id} className="flex items-start space-x-3 bg-white p-3 rounded-lg shadow-sm">
                 <div className="flex-1">
                   <input
                     type="text"
@@ -602,7 +607,7 @@ function App() {
                 </div>
                 <button
                   onClick={() => deleteSwotItem('strengths', item.id)}
-                  className="text-red-500 hover:text-red-700"
+                  className="text-red-500 hover:text-red-700 transition-colors duration-200"
                 >
                   <Trash2 className="h-5 w-5" />
                 </button>
@@ -612,11 +617,18 @@ function App() {
         </div>
 
         {/* Weaknesses Card */}
-        <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-red-500">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Weaknesses</h3>
+        <div className="bg-gradient-to-br from-red-50 to-white rounded-lg shadow-lg p-6 border-l-4 border-red-500 transform transition-all duration-300 hover:scale-105">
+          <div className="flex items-center mb-4">
+            <div className="p-2 bg-red-100 rounded-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 ml-3">Weaknesses</h3>
+          </div>
           <div className="space-y-3">
             {weaknesses.map((item: SwotItem) => (
-              <div key={item.id} className="flex items-start space-x-3">
+              <div key={item.id} className="flex items-start space-x-3 bg-white p-3 rounded-lg shadow-sm">
                 <div className="flex-1">
                   <input
                     type="text"
@@ -628,7 +640,7 @@ function App() {
                 </div>
                 <button
                   onClick={() => deleteSwotItem('weaknesses', item.id)}
-                  className="text-red-500 hover:text-red-700"
+                  className="text-red-500 hover:text-red-700 transition-colors duration-200"
                 >
                   <Trash2 className="h-5 w-5" />
                 </button>
@@ -638,11 +650,18 @@ function App() {
         </div>
 
         {/* Opportunities Card */}
-        <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-blue-500">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Opportunities</h3>
+        <div className="bg-gradient-to-br from-blue-50 to-white rounded-lg shadow-lg p-6 border-l-4 border-blue-500 transform transition-all duration-300 hover:scale-105">
+          <div className="flex items-center mb-4">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 ml-3">Opportunities</h3>
+          </div>
           <div className="space-y-3">
             {opportunities.map((item: SwotItem) => (
-              <div key={item.id} className="flex items-start space-x-3">
+              <div key={item.id} className="flex items-start space-x-3 bg-white p-3 rounded-lg shadow-sm">
                 <div className="flex-1">
                   <input
                     type="text"
@@ -654,7 +673,7 @@ function App() {
                 </div>
                 <button
                   onClick={() => deleteSwotItem('opportunities', item.id)}
-                  className="text-red-500 hover:text-red-700"
+                  className="text-red-500 hover:text-red-700 transition-colors duration-200"
                 >
                   <Trash2 className="h-5 w-5" />
                 </button>
@@ -664,11 +683,18 @@ function App() {
         </div>
 
         {/* Threats Card */}
-        <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-yellow-500">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Threats</h3>
+        <div className="bg-gradient-to-br from-yellow-50 to-white rounded-lg shadow-lg p-6 border-l-4 border-yellow-500 transform transition-all duration-300 hover:scale-105">
+          <div className="flex items-center mb-4">
+            <div className="p-2 bg-yellow-100 rounded-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 ml-3">Threats</h3>
+          </div>
           <div className="space-y-3">
             {threats.map((item: SwotItem) => (
-              <div key={item.id} className="flex items-start space-x-3">
+              <div key={item.id} className="flex items-start space-x-3 bg-white p-3 rounded-lg shadow-sm">
                 <div className="flex-1">
                   <input
                     type="text"
@@ -680,42 +706,13 @@ function App() {
                 </div>
                 <button
                   onClick={() => deleteSwotItem('threats', item.id)}
-                  className="text-red-500 hover:text-red-700"
+                  className="text-red-500 hover:text-red-700 transition-colors duration-200"
                 >
                   <Trash2 className="h-5 w-5" />
                 </button>
               </div>
             ))}
           </div>
-        </div>
-      </div>
-
-      <div className="mt-8">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">SWOT Analysis Overview</h3>
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <Bar
-            data={getSwotChartData()}
-            options={{
-              responsive: true,
-              plugins: {
-                legend: {
-                  position: 'top' as const,
-                },
-                title: {
-                  display: true,
-                  text: 'Number of Items in Each Category',
-                },
-              },
-              scales: {
-                y: {
-                  beginAtZero: true,
-                  ticks: {
-                    stepSize: 1,
-                  },
-                },
-              },
-            }}
-          />
         </div>
       </div>
     </div>
