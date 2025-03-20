@@ -31,6 +31,7 @@ interface Factor {
 interface SwotItem {
   id: string;
   description: string;
+  weight: number;
 }
 
 interface KsfItem {
@@ -220,6 +221,38 @@ function App() {
     }
   }, [strengths, weaknesses, opportunities, threats, ifeFactors, efeFactors, ksfItems]);
 
+  // Update IFE and EFE factors when SWOT items are updated
+  useEffect(() => {
+    const updateFactors = (swotItems: SwotItem[], factors: Factor[]) => {
+      return factors.map((factor) => {
+        const swotItem = swotItems.find((item) => item.id === factor.id);
+        if (swotItem) {
+          return { ...factor, description: swotItem.description };
+        }
+        return factor;
+      });
+    };
+
+    setIfeFactors((prev) => updateFactors([...strengths, ...weaknesses], prev));
+    setEfeFactors((prev) => updateFactors([...opportunities, ...threats], prev));
+  }, [strengths, weaknesses, opportunities, threats]);
+
+  // Update IFE and EFE factors' weights when SWOT items' weights are updated
+  useEffect(() => {
+    const updateWeights = (swotItems: SwotItem[], factors: Factor[]) => {
+      return factors.map((factor) => {
+        const swotItem = swotItems.find((item) => item.id === factor.id);
+        if (swotItem) {
+          return { ...factor, weight: swotItem.weight };
+        }
+        return factor;
+      });
+    };
+
+    setIfeFactors((prev) => updateWeights([...strengths, ...weaknesses], prev));
+    setEfeFactors((prev) => updateWeights([...opportunities, ...threats], prev));
+  }, [strengths, weaknesses, opportunities, threats]);
+
   // Type-safe event handlers
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>, id: string, field: keyof KsfItem) => {
     const value = e.target.type === 'number' ? parseFloat(e.target.value) : e.target.value;
@@ -244,7 +277,8 @@ function App() {
   const addSwotItem = (type: keyof StrategicData['swot']) => {
     const newItem: SwotItem = {
       id: Math.random().toString(36).substr(2, 9),
-      description: ''
+      description: '',
+      weight: 0
     };
 
     switch (type) {
